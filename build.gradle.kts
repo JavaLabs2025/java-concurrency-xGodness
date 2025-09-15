@@ -1,5 +1,13 @@
 plugins {
+    `java-library`
     id("java")
+    id("io.freefair.lombok") version "9.0.0-rc2"
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
 }
 
 group = "org.labs"
