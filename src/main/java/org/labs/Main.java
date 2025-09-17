@@ -1,24 +1,15 @@
 package org.labs;
 
+import lombok.extern.slf4j.Slf4j;
+import org.labs.util.Formatter;
+
+import java.util.Map;
+
+@Slf4j
 public class Main {
-    private static final int PROGRAMMERS_COUNT = 7;
-
-    public static void main(String[] args) {
-        Spoon[] spoons = new Spoon[PROGRAMMERS_COUNT];
-        for (int i = 0; i < PROGRAMMERS_COUNT; i++) {
-            spoons[i] = new Spoon(i);
-        }
-
-        Programmer[] programmers = new Programmer[PROGRAMMERS_COUNT];
-        for (int i = 0; i < PROGRAMMERS_COUNT; i++) {
-            programmers[i] = new Programmer(i, spoons[i], spoons[(i + 1) % PROGRAMMERS_COUNT]);
-            if (i % 2 == 0) {
-                new Thread(programmers[i]).start();
-            }
-        }
-
-        for (int i = 1; i < PROGRAMMERS_COUNT; i += 2) {
-            new Thread(programmers[i]).start();
-        }
+    public static void main(String[] args) throws InterruptedException {
+        Simulation simulation = new Simulation();
+        Map<Integer, Integer> simulationResult = simulation.simulate();
+        log.debug("Simulation results:{}", Formatter.formatSimulationResultMap(simulationResult));
     }
 }
