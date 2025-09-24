@@ -12,10 +12,10 @@ public class Simulation {
     private static final int WAITERS_COUNT = Constants.WAITERS_COUNT.getValue();
 
     public Map<Integer, Integer> simulate() throws InterruptedException {
-        Context.init();
+        Context context = new Context();
         List<Thread> activeThreads = new LinkedList<>();
-        initializeWaiters(activeThreads);
-        Programmer[] programmers = initializeProgrammers(activeThreads);
+        initializeWaiters(context, activeThreads);
+        Programmer[] programmers = initializeProgrammers(context, activeThreads);
 
         for (Thread t : activeThreads) {
             t.join();
@@ -25,24 +25,24 @@ public class Simulation {
                 .collect(Collectors.toMap(Programmer::getId, Programmer::getConsumed));
     }
 
-    private static void initializeWaiters(List<Thread> activeThreads) {
+    private static void initializeWaiters(Context context, List<Thread> activeThreads) {
         Waiter[] waiters = new Waiter[WAITERS_COUNT];
         Thread thread;
         for (int i = 0; i < WAITERS_COUNT; i++) {
-            waiters[i] = new Waiter(i);
+            waiters[i] = new Waiter(context, i);
             thread = new Thread(waiters[i]);
             activeThreads.add(thread);
             thread.start();
         }
     }
 
-    private static Programmer[] initializeProgrammers(List<Thread> activeThreads) {
+    private static Programmer[] initializeProgrammers(Context context, List<Thread> activeThreads) {
         Spoon[] spoons = initializeSpoons();
 
         Programmer[] programmers = new Programmer[PROGRAMMERS_COUNT];
         Thread thread;
         for (int i = 0; i < PROGRAMMERS_COUNT; i++) {
-            programmers[i] = new Programmer(i, spoons[i], spoons[(i + 1) % PROGRAMMERS_COUNT]);
+            programmers[i] = new Programmer(context, i, spoons[i], spoons[(i + 1) % PROGRAMMERS_COUNT]);
             if (i % 2 == 0) {
                 thread = new Thread(programmers[i]);
                 activeThreads.add(thread);

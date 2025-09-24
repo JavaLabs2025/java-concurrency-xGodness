@@ -7,23 +7,19 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
+@Getter
 public class Context {
-    @Getter
-    private static boolean isDinnerCompleted = false;
+    private boolean isDinnerCompleted;
+    private final BlockingQueue<Bowl> refillQueue;
+    private final AtomicInteger remainingFood;
 
-    @Getter
-    private static final BlockingQueue<Bowl> refillQueue = new LinkedBlockingQueue<>();
-
-    @Getter
-    private static final AtomicInteger remainingFood = new AtomicInteger(Constants.INITIAL_FOOD_AMOUNT.getValue());
-
-    public static void init() {
+    public Context() {
         isDinnerCompleted = false;
-        refillQueue.clear();
-        remainingFood.set(Constants.INITIAL_FOOD_AMOUNT.getValue());
+        refillQueue = new LinkedBlockingQueue<>();
+        remainingFood = new AtomicInteger(Constants.INITIAL_FOOD_AMOUNT.getValue());
     }
 
-    public static void completeDinner() {
+    public void completeDinner() {
         isDinnerCompleted = true;
     }
 }

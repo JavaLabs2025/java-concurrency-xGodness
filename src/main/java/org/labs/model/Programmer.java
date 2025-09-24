@@ -16,7 +16,8 @@ public class Programmer implements Runnable {
     private static final int SIMULATION_SPEED_COEFFICIENT = Constants.SIMULATION_SPEED_COEFFICIENT.getValue();
     private static final int TIMEOUT_MILLIS = Constants.DEFAULT_TIMEOUT_MILLIS.getValue();
 
-    private static final Random random = new Random();
+    private final Random random = new Random();
+    private final Context context;
 
     @Getter
     private final int id;
@@ -28,7 +29,8 @@ public class Programmer implements Runnable {
     private final Spoon second;
 
 
-    public Programmer(int id, Spoon first, Spoon second) {
+    public Programmer(Context context, int id, Spoon first, Spoon second) {
+        this.context = context;
         this.id = id;
         this.bowl = new Bowl();
         if (first.compareTo(second) < 0) {
@@ -50,9 +52,9 @@ public class Programmer implements Runnable {
                 log.debug("Bowl {} is empty", id);
                 if (!bowl.isQueued()) {
                     bowl.setIsQueued();
-                    Context.getRefillQueue().put(bowl);
+                    context.getRefillQueue().put(bowl);
                 }
-                if (Context.isDinnerCompleted()) {
+                if (context.isDinnerCompleted()) {
                     break;
                 }
                 continue;
@@ -68,7 +70,7 @@ public class Programmer implements Runnable {
                         second.getLock().wait(TIMEOUT_MILLIS);
                     }
 
-                    if (Context.isDinnerCompleted()) {
+                    if (context.isDinnerCompleted()) {
                         first.setLastUserId(id);
                         second.setLastUserId(id);
                         second.getLock().notify();
