@@ -49,8 +49,8 @@ public class Programmer implements Runnable {
     public void run() {
         while (true) {
             if (bowl.isEmpty()) {
-                log.debug("Bowl {} is empty", id);
                 if (!bowl.isQueued()) {
+                    log.debug("Bowl {} is empty", id);
                     bowl.setIsQueued();
                     context.getRefillQueue().put(bowl);
                 }
