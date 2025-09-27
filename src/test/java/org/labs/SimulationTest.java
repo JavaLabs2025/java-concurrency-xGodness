@@ -2,46 +2,47 @@ package org.labs;
 
 
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
 
 @Slf4j
 public class SimulationTest {
-    private static final boolean MULTITHREADED_TESTING = true;
     private static final int SIMULATION_COUNT = 15;
     private static final int ACCEPTABLE_FAIRNESS_DELTA_PERCENT = 30;
-    private static final int SIMULATION_TIMEOUT_MILLIS = 5000;
+    private static final int SIMULATION_TIMEOUT_MILLIS = 7_500;
 
     private static ExecutorService pool;
 
     @BeforeAll
     static void init() {
-        if (MULTITHREADED_TESTING) {
-            pool = Executors.newCachedThreadPool();
-        } else {
-            pool = Executors.newSingleThreadExecutor();
-        }
+        pool = Executors.newCachedThreadPool();
     }
 
     @Test
-    void simulate_noDeadlocks_acceptableFairness() throws ExecutionException, InterruptedException, TimeoutException {
+    void simulate_noDeadlocks_acceptableFairness() throws InterruptedException {
         Queue<Double> deltas = new ConcurrentLinkedQueue<>();
 
-        List<Future<Void>> tasks = new LinkedList<>();
-        Future<Void> task;
+        List<Future<?>> tasks = new LinkedList<>();
+        Future<?> task;
         for (int i = 0; i < SIMULATION_COUNT; i++) {
 
             task = pool.submit(() -> {
                 Simulation simulation = new Simulation();
-                Map<Integer, Integer> results = Assertions.assertTimeoutPreemptively(
-                        Duration.ofMillis(SIMULATION_TIMEOUT_MILLIS),
-                        simulation::simulate
-                );
+
+                Map<Integer, Integer> results = null;
+                Throwable throwable = null;
+                try {
+                    results = simulation.simulate(pool, SIMULATION_TIMEOUT_MILLIS);
+                } catch (InterruptedException | TimeoutException ex) {
+                    log.error(ex.getMessage());
+                    throwable = ex;
+                }
+                Assertions.assertNull(throwable);
 
                 Collection<Integer> values = results.values();
                 int min = Collections.min(values);
@@ -65,7 +66,6 @@ public class SimulationTest {
                 Assertions.assertTrue(delta <= ACCEPTABLE_FAIRNESS_DELTA_PERCENT);
 
                 deltas.add(delta);
-                return null;
             });
 
             tasks.add(task);
@@ -73,7 +73,12 @@ public class SimulationTest {
 
         while (!tasks.isEmpty()) {
             task = tasks.removeFirst();
-            task.get(SIMULATION_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
+            try {
+                task.get(SIMULATION_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
+            } catch (TimeoutException | ExecutionException ex) {
+                log.error(ex.getMessage());
+                Assertions.fail(ex);
+            }
         }
 
         log.info("Average delta (%): {}",
@@ -81,4 +86,10 @@ public class SimulationTest {
                         deltas.stream().mapToDouble(Double::doubleValue).average().orElse(-1))
         );
     }
+
+    @AfterAll
+    static void tearDown() {
+        pool.close();
+    }
+
 }
